@@ -168,6 +168,11 @@ class UR():
         rospy.wait_for_service('/ur_hardware_interface/dashboard/play')
         resp = self.s_playProgram()
         rospy.sleep(0.5)
+        # If you wanna observe the movement of UR Robot in RViz, you should turn on Joint State Controller.
+        # It'd publish TF Information of UR Joint.
+        # If you don'd turn on Joint State Controller, you'd loose Joint TF Information and can't observe movement of UR Robot.
+        self.switch_on_controller("joint_state_controller")
+        rospy.sleep(0.5)
         # Switch the Controller for UR Robot to Forward Cartesian Trajectory Controller
         self.switch_on_controller("forward_cartesian_traj_controller")
         rospy.sleep(0.5)
