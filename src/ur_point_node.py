@@ -128,7 +128,7 @@ class UR():
         self.load_controllers_client = rospy.ServiceProxy('/controller_manager/load_controller',
                 LoadController)
         try:
-            self.Load_controllers_client.wait_for_service(timeout)
+            self.load_controllers_client.wait_for_service(timeout)
             print("controller load service is on")
         except rospy.exceptions.ROSException as err:
             print(
