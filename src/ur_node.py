@@ -29,7 +29,9 @@ from ur_dashboard_msgs.srv import GetRobotMode, \
 
 # controller manager service messages to choose controller for ur robot
 from controller_manager_msgs.srv import SwitchControllerRequest, \
-                                        SwitchController
+                                        SwitchController, \
+                                        LoadControllerRequest, \
+                                        LoadController
 
 # Trigger Module for standard service
 from std_srvs.srv import Trigger
@@ -121,6 +123,18 @@ class UR():
             print(
                 "Could not reach set_mode action. Make sure that the driver is actually running."
                 " Msg: {}".format(err))
+            
+        # Connect to Load Controller Action Server from Client
+        self.load_controllers_client = rospy.ServiceProxy('/controller_manager/load_controller',
+                LoadController)
+        try:
+            self.load_controllers_client.wait_for_service(timeout)
+            print("controller load service is on")
+        except rospy.exceptions.ROSException as err:
+            print(
+                "Could not reach controller load service. Make sure that the driver is actually running."
+                " Msg: {}".format(err))
+            
         # Connect to Switch Controller Action Server from Client
         self.switch_controllers_client = rospy.ServiceProxy('/controller_manager/switch_controller',
                 SwitchController)
@@ -167,6 +181,13 @@ class UR():
         # Play the Program that we Load
         rospy.wait_for_service('/ur_hardware_interface/dashboard/play')
         resp = self.s_playProgram()
+        rospy.sleep(0.5)
+        # If you wanna observe the movement of UR Robot in RViz, you should turn on Joint State Controller.
+        # It'd publish TF Information of UR Joint.
+        # If you don'd turn on Joint State Controller, you'd loose Joint TF Information and can't observe movement of UR Robot.
+        self.load_controller("joint_state_controller")
+        rospy.sleep(0.5)
+        self.switch_on_controller("joint_state_controller")
         rospy.sleep(0.5)
         # Switch the Controller for UR Robot to Forward Cartesian Trajectory Controller
         self.switch_on_controller("forward_cartesian_traj_controller")
@@ -359,6 +380,13 @@ class UR():
         self.set_mode_client.wait_for_result()
         return self.set_mode_client.get_result().success
 
+    # Function to Load the Controller for UR Robot
+    def load_controller(self, controller_name):
+        srv = LoadControllerRequest()
+        srv.name = controller_name
+        result = self.load_controllers_client(srv)
+        print(result)
+      
     # Function to Switch the Controller for UR Robot
     def switch_on_controller(self, controller_name):
         """Switches on the given controller stopping all other known controllers with best_effort
